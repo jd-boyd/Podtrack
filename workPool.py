@@ -67,7 +67,8 @@ class WorkerPoolThreads(object):
         if sys.version_info[0]==2 and sys.version_info[1]<5:
             taskDone = self.task_done
         else:
-            taskDone = self.workQ.task_done()
+            taskDone = self.workQ.task_done
+
         while self.running:
             try:
                 key, task=self.workQ.get(True, 1)
@@ -92,7 +93,6 @@ class WorkerPoolThreads(object):
             return lambda: fcn(*args)
         if type(args) is dict:
             return lambda: fcn(**args)
-            
 
     def addTaskArgs(self, key, fcn, args):
         self.taskList.append(key)

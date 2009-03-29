@@ -93,9 +93,41 @@ def makeListOfFilesToGet():
 
     wq.stop()
     
+def getArgHash():
+    justArgs = sys.argv[1:]    
+    arguments = {}    
+    for a in justArgs:  
+        try:
+            arg_split = a.split('=')        
+            k = arg_split[0]
+            v = "=".join(arg_split[1:])
+        except ValueError:
+            k = a
+            v = True
+        arguments[k]=v
+    #print "Args:", arguments
+    return arguments
+
+
 if __name__ == "__main__":
     #wq = WorkerPoolSerial(10)
     con = sqlite.connect('podtrack.db')
+
+    args = getArgHash()
+
+    if '--add' in args:
+        url = args['--add']
+        print "Adding", url, "to podtrackdb"
+        f = feedparser.parse(url)
+        t = f.feed.title
+        print t
+        con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
+        con.commit()
+
+    if '--nothing' in args:
+        print "Doing nothing:", args['--nothing']
+        sys.exit(0)
+
     makeListOfFilesToGet()
 
 #for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
