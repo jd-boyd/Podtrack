@@ -1,8 +1,14 @@
 from urlparse import urlparse
-import httplib2
+import httplib2, sys
+
+try:
+    from sqlite3 import dbapi2 as sqlite
+except:
+    from pysqlite2 import dbapi2 as sqlite
+
 
 def getList():
-    f = open('../get.sh', 'r')
+    f = open('get.sh', 'r')
     u=[]
     for l in f: u.append(l)
     
@@ -14,27 +20,27 @@ def getList():
         u2.append(url)
     return u2
 
-urlList = getList()
-
 def getFile(url, filename):
     h = httplib2.Http(".cache")
     resp, data = h.request(u, "GET")
-    
-    f = open(fileName, 'w')
+
+    f = open(filename, 'w')
     f.write(data)
     f.close()
 
-for u in urlList:
-    print "Grabbing", u
-    uInfo = urlparse(u)
-    fileName = uInfo.path.split('/')[-1]
-    print "Saving as", fileName
+def fileNameFromUrl(url):
+    uInfo = urlparse(url)
+    return uInfo.path.split('/')[-1]
 
-    getFile(u, fileName)
-#    h = httplib2.Http(".cache")
-#    resp, data = h.request(u, "GET")
-#    
-#    f = open(fileName, 'w')
-#    f.write(data)
-#    f.close()
+if __name__ == "__main__":
+    urlList = getList()
+    
+    con = sqlite.connect('podtrack.db')
+    audioDir = con.cursor().execute('select pVal from podConfig;').fetchone()[0]
+    
+    for u in urlList:
+        print "Grabbing", u
+        fileName = fileNameFromUrl(u)
+        print "Saving as", audioDir + "/" + fileName
 
+        getFile(u, audioDir + "/" + fileName)
