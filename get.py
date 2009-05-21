@@ -1,5 +1,5 @@
 from urlparse import urlparse
-import httplib2, sys
+import httplib2, sys, gzip
 
 try:
     from sqlite3 import dbapi2 as sqlite
