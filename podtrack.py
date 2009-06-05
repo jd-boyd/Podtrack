@@ -209,7 +209,6 @@ def getFeedsFromOpml(fileName):
     p.Parse(d)
     return feeds
 
-
 def dumpOpml(fileName):
     c = con.cursor()
     c.execute('select pName, pUrl from podCast order by pName;')
@@ -286,7 +285,15 @@ if __name__ == "__main__":
 
 #for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
     f=open('get.sh', 'w')
-    for l in ar: #filesToDl:
-        f.write('wget ' + l + '\n')
+    for u in ar: #filesToDl:
+        f.write('wget ' + u + '\n')
     f.close()
+
+    audioDir = con.cursor().execute('select pVal from podConfig;').fetchone()[0]
+    for u in ar: #filesToDl:
+        fileName = fileNameFromUrl(u)
+        print "Downloading to ", audioDir + "/" + fileName, "from", u
+        getFile(u, audioDir + "/" + fileName)
+
+    
 
