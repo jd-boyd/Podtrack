@@ -18,34 +18,92 @@ except:
 #pUrl is the feed item url, while pHref is the enclosure URL
 #create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement, gotten integer);
 
-def createDb():
-    c = con.cursor()
-    c.execute("""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
-    c.execute("""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
-    c.execute("""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
-    con.commit()
+#def createDb():
+#    c = con.cursor()
+#    c.execute("""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
+#    c.execute("""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
+#    c.execute("""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
+#    con.commit()
 
-con=None
+#con=None
 
-def isNewEntry(e):
-    c = con.cursor()
-    if 'title' in e:
-        title = e['title'].encode("utf-8")
-    else:
-        title = 'New Item'
-    if not 'enclosures' in e:
-        return False
+class podDb(object):
+    def __init__(self):
+        self.con=None
 
-    t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
-    c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
-    ret=c.fetchall()
+    def open(self):
+        self.con = sqlite.connect('podtrack.db')
+
+    def testDb(self):
+        try:
+            self.con.cursor().execute("select * from podCast")
+            return True
+        except sqlite.OperationalError, soe:
+            return False
+
+    def createDb(self):
+        c = self.con.cursor()
+        c.execute("""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
+        c.execute("""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
+        c.execute("""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
+        self.con.commit()
+
+    def isNewEntry(self, e):
+        c = self.con.cursor()
+        if 'title' in e:
+            title = e['title'].encode("utf-8")
+        else:
+            title = 'New Item'
+        if not 'enclosures' in e:
+            return False
+
+        t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
+        c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
+        ret=c.fetchall()
     #print repr(ret)
-    if ret==[]:
-        return True
-    else:
-        return False
+        if ret==[]:
+            return True
+        else:
+            return False
 
-#filesToDl=[]
+    def addEntry(self, title, link, enc, pid):
+        t={"t": title, "u": str(link), "h": str(enc), "i": pid}
+        c = self.con.cursor()
+        c.execute("insert into podItems(pTitle, pUrl, pHref, pId, gotten) values(:t,:u,:h,:i, 0);", t)
+        self.con.commit()
+
+    def addFeed(self, con, url):
+        print "Adding", url, "to podtrackdb"
+        f = feedparser.parse(url)
+        t = f.feed.title
+        print t
+        self.con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
+        self.con.commit()
+
+    def isNewEntry(self, e):
+        c = self.con.cursor()
+        if 'title' in e:
+            title = e['title'].encode("utf-8")
+        else:
+            title = 'New Item'
+        if not 'enclosures' in e:
+            return False
+
+        t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
+        c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
+        ret=c.fetchall()
+
+        if ret==[]:
+            return True
+        else:
+            return False
+
+class podcast(object):
+    def __init__(self):
+        #pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT
+        pass
+
+filesToDl=[]
 
 def getFeeds(fileName):
     # 3 handler functions
@@ -83,7 +141,7 @@ def getFeeds(fileName):
 def processEntries(entries, pid):
     newItemAr=[]
     for e in entries:
-        if isNewEntry(e):
+        if pdb.isNewEntry(e):
             link = e['link']
             if 'title' in e:
                 title = e['title'].encode("utf-8")
@@ -95,11 +153,12 @@ def processEntries(entries, pid):
                 print "Download:", enc
                 #filesToDl.append(enc)
                 newItemAr.append(enc)
+
                 t={"t": title, "u": str(link), "h": str(enc), "i": pid}
-                #print repr(t)
-                c = con.cursor()
+                c = pdb.con.cursor()
                 c.execute("insert into podItems(pTitle, pUrl, pHref, pId, gotten) values(:t,:u,:h,:i, 0);", t)
-                con.commit()
+                pdb.con.commit()
+
             except KeyError, ke:
                 print "ERROR----------------------------------"
                 print "KEY ERROR:", ke.args[0]
@@ -133,7 +192,7 @@ def makeListOfFilesToGet():
     newItems=[]
     wq = WorkerPoolThreads(10)
 
-    rows=[r for r in con.cursor().execute("select * from podCast;")]
+    rows=[r for r in pdb.con.cursor().execute("select * from podCast;")]
 
     for r in rows:
         l = r[1]
@@ -162,19 +221,22 @@ def getArgHash():
     #print "Args:", arguments
     return arguments
 
-def addFeed(con, url):
-    print "Adding", url, "to podtrackdb"
-    f = feedparser.parse(url)
-    t = f.feed.title
-    print t
-    con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
-    con.commit()
+# def addFeed(con, url):
+#     print "Adding", url, "to podtrackdb"
+#     f = feedparser.parse(url)
+#     t = f.feed.title
+#     print t
+#     con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
+#     con.commit()
+
+class opml(object):
+    pass
 
 def importOpml(fileName):
     feeds=getFeedsFromOpml(fileName)
     for f in feeds:
         print "Adding", f
-        addFeed(con, f['url'])
+        pdb.addFeed(con, f['url'])
 
 def getFeedsFromOpml(fileName):
     # 3 handler functions
@@ -231,13 +293,18 @@ def dumpOpml(fileName):
     f.write('</body></opml>\n')
     f.close()
 
+pdb = podDb()
+
 if __name__ == "__main__":
-    con = sqlite.connect('podtrack.db')
+    #con = sqlite.connect('podtrack.db')
     
-    try:
-        con.cursor().execute("select * from podCast")
-    except sqlite.OperationalError, soe:
-        createDb()
+    #try:
+    #    con.cursor().execute("select * from podCast")
+    #except sqlite.OperationalError, soe:
+    #    createDb()
+
+
+    pdb.open()
 
     args = getArgHash()
 
@@ -249,7 +316,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if '--list' in args:
-        c = con.cursor()
+        c = pdb.con.cursor()
         c.execute('select pName, pUrl from podCast order by pName;')
         print "List of podcasts:"
         for r in c:
@@ -281,7 +348,7 @@ if __name__ == "__main__":
     #print repr(ar)
     #print repr(filesToDl)
 
-    audioDir = con.cursor().execute('select pVal from podConfig;').fetchone()[0]
+    audioDir = pdb.con.cursor().execute('select pVal from podConfig;').fetchone()[0]
 
 #for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
     f=open('get.sh', 'w')
@@ -289,7 +356,7 @@ if __name__ == "__main__":
         f.write('wget ' + u + '\n')
     f.close()
 
-    audioDir = con.cursor().execute('select pVal from podConfig;').fetchone()[0]
+    audioDir = pdb.con.cursor().execute('select pVal from podConfig;').fetchone()[0]
     for u in ar: #filesToDl:
         fileName = fileNameFromUrl(u)
         print "Downloading to ", audioDir + "/" + fileName, "from", u
