@@ -18,15 +18,6 @@ except:
 #pUrl is the feed item url, while pHref is the enclosure URL
 #create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement, gotten integer);
 
-#def createDb():
-#    c = con.cursor()
-#    c.execute("""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
-#    c.execute("""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
-#    c.execute("""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
-#    con.commit()
-
-#con=None
-
 class podDb(object):
     def __init__(self):
         self.con=None
@@ -60,7 +51,7 @@ class podDb(object):
         t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
         c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
         ret=c.fetchall()
-    #print repr(ret)
+
         if ret==[]:
             return True
         else:
@@ -221,14 +212,6 @@ def getArgHash():
     #print "Args:", arguments
     return arguments
 
-# def addFeed(con, url):
-#     print "Adding", url, "to podtrackdb"
-#     f = feedparser.parse(url)
-#     t = f.feed.title
-#     print t
-#     con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
-#     con.commit()
-
 class opml(object):
     pass
 
@@ -296,13 +279,10 @@ def dumpOpml(fileName):
 pdb = podDb()
 
 if __name__ == "__main__":
-    #con = sqlite.connect('podtrack.db')
-    
     #try:
     #    con.cursor().execute("select * from podCast")
     #except sqlite.OperationalError, soe:
     #    createDb()
-
 
     pdb.open()
 
