@@ -8,6 +8,9 @@ import httplib2
 import gzip
 import xml.parsers.expat
 
+import logging
+import optparse
+
 try:
     from sqlite3 import dbapi2 as sqlite
 except:
@@ -88,10 +91,17 @@ class podDb(object):
             return True
         else:
             return False
+    def getConfigOption(self, key):
+        t={"pk": key}
+        return self.con.cursor().execute('select pVal from podConfig where pKey=:pk;', t).fetchone()[0]
 
 class podcast(object):
     def __init__(self):
         #pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT
+        self.pid=0
+        pass
+
+    def processEntries(self):
         pass
 
 filesToDl=[]
@@ -163,6 +173,8 @@ def fileNameFromUrl(url):
     return uInfo.path.split('/')[-1]
 
 def getFile(url, filename):
+#Review this function in light of: 
+# http://diveintopython.org/http_web_services/index.html
     h = httplib2.Http(".cache")
     resp, data = h.request(u, "GET")
     
@@ -276,6 +288,30 @@ def dumpOpml(fileName):
     f.write('</body></opml>\n')
     f.close()
 
+
+def makeOptions():
+    # Populate our options, -h/--help is already there for you.
+    optp = optparse.OptionParser()
+    optp.add_option('-v', '--verbose', dest='verbose', action='count',
+                    help="Increase verbosity (specify multiple times for more)")
+    
+    optp.add_option('-a', '--add', dest='add', 
+                    help="Add a URL to the podtrack database")
+    
+    optp.add_option('-l', '--list', dest='list', action="store_true",
+                    help="List feeds in database")
+    
+    optp.add_option('-e', '--exportOpml', dest='export', default='',
+                    help="Export database as an OPML file.")
+    
+    optp.add_option('-i', '--importOpml', dest='importO', default='',
+                    help="Import an OPML file and add it to the database.")
+    
+    optp.add_option('-n', '--nothing', dest='nothing',  action="store_true",
+                    help="Do nothing and quit.")
+    
+    return optp
+
 pdb = podDb()
 
 if __name__ == "__main__":
@@ -286,16 +322,33 @@ if __name__ == "__main__":
 
     pdb.open()
 
-    args = getArgHash()
+    if not pdb.testDb(): 
+        print "Database not found, creating new file."
+        pdb.createDb()
 
-    argList = ['--add', '--list', '--opml', '--help', '--nothing']
+    #args = getArgHash()
 
-    if '--add' in args:
-        url = args['--add']
+    #argList = ['--add', '--list', '--opml', '--help', '--nothing']
+
+    optp = makeOptions()
+    opts, args = optp.parse_args()
+        
+    log_level = logging.WARNING # default
+    if opts.verbose == 1:
+        log_level = logging.INFO
+    elif opts.verbose >= 2:
+        log_level = logging.DEBUG
+
+    ##logging.basicConfig(level=log_level)
+
+    #if '--add' in args:
+    if opts.add:
+        url = opts.add
         addFeed(con, url)
         sys.exit(0)
 
-    if '--list' in args:
+    #if '--list' in args:
+    if opts.list:
         c = pdb.con.cursor()
         c.execute('select pName, pUrl from podCast order by pName;')
         print "List of podcasts:"
@@ -306,21 +359,24 @@ if __name__ == "__main__":
                 print r[0]
         sys.exit(0)
 
-    if '--exportOpml' in args:
-        dumpOpml(args['--exportOpml'])
+    #if '--exportOpml' in args:
+    if opts.export:
+        dumpOpml(opts.export)
         sys.exit(0)       
 
-    if '--importOpml' in args:
-        importOpml(args['--importOpml'])
+    #if '--importOpml' in args:
+    if opts.importO:
+        importOpml(opts.importO)
         sys.exit(0)
 
-    if '--help' in args:
-        print "No help yet:", args['--help']
-        print argList
-        sys.exit(0)
+    #if '--help' in args:
+    #    print "No help yet:", args['--help']
+    #    print argList
+    #    sys.exit(0)
 
-    if '--nothing' in args:
-        print "Doing nothing:", args['--nothing']
+    #if '--nothing' in args:
+    if opts.nothing:
+        print "Doing nothing."
         sys.exit(0)
 
     ar=makeListOfFilesToGet()
@@ -328,15 +384,13 @@ if __name__ == "__main__":
     #print repr(ar)
     #print repr(filesToDl)
 
-    audioDir = pdb.con.cursor().execute('select pVal from podConfig;').fetchone()[0]
-
 #for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
     f=open('get.sh', 'w')
     for u in ar: #filesToDl:
         f.write('wget ' + u + '\n')
     f.close()
 
-    audioDir = pdb.con.cursor().execute('select pVal from podConfig;').fetchone()[0]
+    audioDir = pdb.con.cursor().execute('select pVal from podConfig where pKey="audioDir";').fetchone()[0]
     for u in ar: #filesToDl:
         fileName = fileNameFromUrl(u)
         print "Downloading to ", audioDir + "/" + fileName, "from", u
