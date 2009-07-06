@@ -209,20 +209,20 @@ def makeListOfFilesToGet():
     wq.stop()
     return newItems
     
-def getArgHash():
-    justArgs = sys.argv[1:]    
-    arguments = {}    
-    for a in justArgs:  
-        try:
-            arg_split = a.split('=')        
-            k = arg_split[0]
-            v = "=".join(arg_split[1:])
-        except ValueError:
-            k = a
-            v = True
-        arguments[k]=v
-    #print "Args:", arguments
-    return arguments
+# def getArgHash():
+#     justArgs = sys.argv[1:]    
+#     arguments = {}    
+#     for a in justArgs:  
+#         try:
+#             arg_split = a.split('=')        
+#             k = arg_split[0]
+#             v = "=".join(arg_split[1:])
+#         except ValueError:
+#             k = a
+#             v = True
+#         arguments[k]=v
+#     #print "Args:", arguments
+#     return arguments
 
 class opml(object):
     pass
