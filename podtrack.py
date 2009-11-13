@@ -77,14 +77,18 @@ class podDb(object):
     def isNewEntry(self, e):
         c = self.con.cursor()
         if 'title' in e:
-            title = e['title'].encode("utf-8")
+            #title = e['title'].encode("utf-8")
+            title = e['title']
         else:
             title = 'New Item'
         if not 'enclosures' in e:
             return False
 
-        t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
-        c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
+        t=(unicode(title), 
+           unicode(e['link']), 
+           unicode(e['enclosures'][0]['href']))
+        print t
+        c.execute(u"select itemId from podItems where pTitle=? and pUrl=? and pHref=?", t)
         ret=c.fetchall()
 
         if ret==[]:
@@ -149,7 +153,7 @@ def getFile(url, filename):
 #Review this function in light of: 
 # http://diveintopython.org/http_web_services/index.html
     h = httplib2.Http(".cache")
-    resp, data = h.request(u, "GET")
+    resp, data = h.request(url, "GET")
     
     f = open(filename, 'w')
     f.write(data)
