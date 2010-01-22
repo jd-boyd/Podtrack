@@ -21,7 +21,7 @@ except:
 #pUrl is the feed item url, while pHref is the enclosure URL
 #create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement, gotten integer);
 
-class podDb(object):
+class PodDb(object):
     def __init__(self):
         self.con=None
 
@@ -30,16 +30,16 @@ class podDb(object):
 
     def testDb(self):
         try:
-            self.con.cursor().execute("select * from podCast")
+            self.con.cursor().execute(u"select * from podCast")
             return True
         except sqlite.OperationalError, soe:
             return False
 
     def createDb(self):
         c = self.con.cursor()
-        c.execute("""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
-        c.execute("""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
-        c.execute("""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
+        c.execute(u"""create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);""")
+        c.execute(u"""create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement);""")
+        c.execute(u"""create table podConfig (pKey char(1024), pVal char(2048), cId integer primary key autoincrement);""")
         self.con.commit()
 
     def isNewEntry(self, e):
@@ -52,7 +52,7 @@ class podDb(object):
             return False
 
         t={"t": title, "u": str(e['link']), "h": str(e['enclosures'][0]['href'])}
-        c.execute("select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
+        c.execute(u"select itemId from podItems where pTitle=:t and pUrl=:u and pHref=:h", t)
         ret=c.fetchall()
 
         if ret==[]:
@@ -77,7 +77,6 @@ class podDb(object):
     def isNewEntry(self, e):
         c = self.con.cursor()
         if 'title' in e:
-            #title = e['title'].encode("utf-8")
             title = e['title']
         else:
             title = 'New Item'
@@ -117,24 +116,26 @@ class podcast(object):
 filesToDl=[]
 
 def processEntries(entries, pid):
+    """Process all items in a collection of entries and return the list 
+    of new URLs to fetch."""
     newItemAr=[]
     for e in entries:
         if pdb.isNewEntry(e):
             link = e['link']
             if 'title' in e:
-                title = e['title'].encode("utf-8")
+                title = unicode(e['title']) #.encode("utf-8")
             else:
-                title = 'New Item'
-            print "New item:", title, ":", link
+                title = u'New Item'
+            print u"New item:", title.encode("utf-8"), u":", link
             try:
                 enc = e['enclosures'][0]['href']
                 print "Download:", enc
                 #filesToDl.append(enc)
                 newItemAr.append(enc)
-
-                t={"t": title, "u": str(link), "h": str(enc), "i": pid}
+                
+                t={"t": title, "u": unicode(link), "h": unicode(enc), "i": pid}
                 c = pdb.con.cursor()
-                c.execute("insert into podItems(pTitle, pUrl, pHref, pId, gotten) values(:t,:u,:h,:i, 0);", t)
+                c.execute(u"insert into podItems(pTitle, pUrl, pHref, pId, gotten) values(:t,:u,:h,:i, 0);", t)
                 pdb.con.commit()
 
             except KeyError, ke:
@@ -252,7 +253,7 @@ def makeOptions():
                     help="Import an OPML file and add it to the database.")
     return optp
 
-pdb = podDb()
+pdb = PodDb()
 
 if __name__ == "__main__":
     pdb.open()
