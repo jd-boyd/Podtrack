@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     if opts.add:
         url = opts.add
-        addFeed(con, url)
+        pdb.addFeed(url)
         sys.exit(0)
 
     if opts.list:
@@ -300,10 +300,10 @@ if __name__ == "__main__":
     ar=makeListOfFilesToGet()
 
 #for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
-    f=open('get.sh', 'w')
-    for u in ar: #filesToDl:
-        f.write('wget ' + u + '\n')
-    f.close()
+    #f=open('get.sh', 'w')
+    #for u in ar: #filesToDl:
+    #    f.write('wget ' + u + '\n')
+    #f.close()
 
     audioDir = pdb.con.cursor().execute('select pVal from podConfig where pKey="audioDir";').fetchone()[0]
     for u in ar: #filesToDl:
