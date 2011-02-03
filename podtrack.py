@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.6
 
 import sys, traceback
 import feedparser
@@ -280,9 +280,10 @@ if __name__ == "__main__":
 
     if opts.list:
         c = pdb.con.cursor()
-        c.execute('select pName, pUrl from podCast order by pName;')
+        c.execute('select pName, pUrl, pId from podCast order by pId;')
         print "List of podcasts:"
         for r in c:
+            print "%3d)" % ( r[2],) ,
             if r[0]=="":
                 print r[1]
             else:
@@ -308,8 +309,9 @@ if __name__ == "__main__":
     audioDir = pdb.con.cursor().execute('select pVal from podConfig where pKey="audioDir";').fetchone()[0]
     for u in ar: #filesToDl:
         fileName = fileNameFromUrl(u)
-        print "Downloading to ", audioDir + "/" + fileName, "from", u
-        getFile(u, audioDir + "/" + fileName)
+        d_path = audioDir + "/" + fileName
+        print "Downloading to ", d_path, "from", u
+        getFile(u, d_path)
 
     
 
