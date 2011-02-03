@@ -1,2 +1,13 @@
+REQUIREMENTS
 This project depends on:
 httplib2 (http://code.google.com/p/httplib2/)
+
+BUGS/DESIGN LIMITATIONS
+- On a new install, it assumes that the audio directory already exists.
+
+TODO
+- Apply technique from:
+    http://www.kylev.com/2009/07/01/start-your-python-project-with-optparse-and-logging/
+- Add delete option
+- Add opml import
+- Expire data form sqlite
