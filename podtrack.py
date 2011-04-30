@@ -86,7 +86,7 @@ class PodDb(object):
         t=(unicode(title), 
            unicode(e['link']), 
            unicode(e['enclosures'][0]['href']))
-        print t
+        #print t
         c.execute(u"select itemId from podItems where pTitle=? and pUrl=? and pHref=?", t)
         ret=c.fetchall()
 
