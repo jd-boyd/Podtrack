@@ -16,10 +16,15 @@ try:
 except:
     from pysqlite2 import dbapi2 as sqlite
 
-#on ubuntu 8.10 use sqlite3 from CLI instead of just sqlite
-#create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);
-#pUrl is the feed item url, while pHref is the enclosure URL
-#create table podItems (pTitle char(1024), pUrl char(2048), pHref char(2048), pId integer, itemId integer primary key autoincrement, gotten integer);
+# on ubuntu 8.10 use sqlite3 from CLI instead of just sqlite
+
+# create table podCast ( pName char(50), pUrl  char(2048), pId INTEGER PRIMARY KEY AUTOINCREMENT);
+
+# pUrl is the feed item url, while pHref is the enclosure URL
+
+# create table podItems (pTitle char(1024), pUrl char(2048), pHref
+# char(2048), pId integer, itemId integer primary key autoincrement,
+# gotten integer);
 
 class PodDb(object):
     def __init__(self):
@@ -123,14 +128,13 @@ def processEntries(entries, pid):
         if pdb.isNewEntry(e):
             link = e['link']
             if 'title' in e:
-                title = unicode(e['title']) #.encode("utf-8")
+                title = unicode(e['title'])
             else:
                 title = u'New Item'
             log.info(u"New item: %s : %s", title.encode("utf-8"), link)
             try:
                 enc = e['enclosures'][0]['href']
                 print "Download:", enc
-                #filesToDl.append(enc)
                 newItemAr.append(enc)
                 
                 t={"t": title, "u": unicode(link), "h": unicode(enc), "i": pid}
@@ -298,14 +302,8 @@ if __name__ == "__main__":
 
     ar=makeListOfFilesToGet()
 
-#for f in `ls` ; do mv $f `echo $f | sed 's/\?.*$//'` ; done
-    #f=open('get.sh', 'w')
-    #for u in ar: #filesToDl:
-    #    f.write('wget ' + u + '\n')
-    #f.close()
-
     audioDir = pdb.con.cursor().execute('select pVal from podConfig where pKey="audioDir";').fetchone()[0]
-    for u in ar: #filesToDl:
+    for u in ar: 
         fileName = fileNameFromUrl(u)
         d_path = audioDir + "/" + fileName
         logging.info("Downloading to %s from %s", d_path, u)
