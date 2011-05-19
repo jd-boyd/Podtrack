@@ -273,7 +273,7 @@ if __name__ == "__main__":
     elif opts.verbose >= 2:
         log_level = logging.DEBUG
 
-    ##logging.basicConfig(level=log_level)
+    logging.basicConfig(level=log_level)
 
     if opts.add:
         url = opts.add
