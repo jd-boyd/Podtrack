@@ -134,7 +134,7 @@ def processEntries(entries, pid):
             log.info(u"New item: %s : %s", title.encode("utf-8"), link)
             try:
                 enc = e['enclosures'][0]['href']
-                print "Download:", enc
+                logging.info("Download: %s", enc)
                 newItemAr.append(enc)
                 
                 t={"t": title, "u": unicode(link), "h": unicode(enc), "i": pid}
@@ -143,9 +143,9 @@ def processEntries(entries, pid):
                 pdb.con.commit()
 
             except KeyError, ke:
-                print "ERROR----------------------------------"
-                print "KEY ERROR:", ke.args[0]
-                print e
+                logging.error("ERROR----------------------------------")
+                logging.error("KEY ERROR: %s", ke.args[0])
+                logging.error("Working on entry: %s", e)
     return newItemAr
 
 def fileNameFromUrl(url):
@@ -165,7 +165,7 @@ def getFile(url, filename):
 from workPool import WorkerPoolSerial, WorkerPoolThreads
 
 def grabFeed(l):
-    print "Grabbing: ", l
+    logging.debug("Grabbing: %s", l)
     return feedparser.parse(l)
 
 def makeGrabber(l):
@@ -179,11 +179,11 @@ def makeListOfFilesToGet():
 
     for r in rows:
         l = r[1]
-        print "Adding:",l, r[2]
+        logging.debug("Adding: %s %s",l, r[2])
         wq.addTask(r[2], makeGrabber(l))
         
     for r,feed in wq:
-        print "PE:", r
+        logging.debug("PE: %s", r)
         newItems += processEntries(feed['entries'], r)
 
     wq.stop()
