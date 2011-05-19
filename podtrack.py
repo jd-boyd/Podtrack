@@ -70,7 +70,7 @@ class PodDb(object):
         print "Adding", url, "to podtrackdb"
         f = feedparser.parse(url)
         t = f.feed.title
-        print t
+
         self.con.cursor().execute('insert into podCast(pName, pUrl) values (:n, :u);', {'u': url, 'n': ''})
         self.con.commit()
 
@@ -126,7 +126,7 @@ def processEntries(entries, pid):
                 title = unicode(e['title']) #.encode("utf-8")
             else:
                 title = u'New Item'
-            print u"New item:", title.encode("utf-8"), u":", link
+            log.info(u"New item: %s : %s", title.encode("utf-8"), link)
             try:
                 enc = e['enclosures'][0]['href']
                 print "Download:", enc
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     for u in ar: #filesToDl:
         fileName = fileNameFromUrl(u)
         d_path = audioDir + "/" + fileName
-        print "Downloading to ", d_path, "from", u
+        logging.info("Downloading to %s from %s", d_path, u)
         getFile(u, d_path)
 
     
