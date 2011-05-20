@@ -131,7 +131,7 @@ def processEntries(entries, pid):
                 title = unicode(e['title'])
             else:
                 title = u'New Item'
-            log.info(u"New item: %s : %s", title.encode("utf-8"), link)
+            logging.info(u"New item: %s : %s", title.encode("utf-8"), link)
             try:
                 enc = e['enclosures'][0]['href']
                 logging.info("Download: %s", enc)
